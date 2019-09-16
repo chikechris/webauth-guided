@@ -16,7 +16,9 @@ server.get('/', (req, res) => {
   res.send("It's alive!")
 })
 
-{/********************************** */}
+{
+  /** ******************************** */
+}
 server.post('/api/register', (req, res) => {
   let user = req.body
 
@@ -32,8 +34,9 @@ server.post('/api/register', (req, res) => {
     })
 })
 
-
-{/********************************** */ }
+{
+  /** ******************************** */
+}
 server.post('/api/login', (req, res) => {
   let { username, password } = req.body
 
@@ -52,9 +55,11 @@ server.post('/api/login', (req, res) => {
       })
   }
 })
-{/********************************** */ }
+{
+  /** ******************************** */
+}
 
-server.get('/api/users', (req, res) => {
+server.get('/api/users', restricted, (req, res) => {
   Users.find()
     .then(users => {
       res.json(users)
@@ -70,21 +75,21 @@ server.get('/hash', (req, res) => {
 })
 
 // middleware:
-function restricted(req, res, next) {
-  const { username, password } = req.headers;
+function restricted (req, res, next) {
+  const { username, password } = req.headers
 
   if (username && password) {
     Users.findBy({ username })
       .first()
       .then(user => {
         if (user && bcrypt.compareSync(password, user.password)) {
-          next();
+          next()
         } else {
-          res.status(401).json({ message: "invalidate login" })
+          res.status(401).json({ message: 'invalidate login' })
         }
       })
       .catch(error => {
-        res.status(500).json(error);
+        res.status(500).json(error)
       })
   }
 }

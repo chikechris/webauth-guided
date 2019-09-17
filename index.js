@@ -1,60 +1,74 @@
-const express = require('express')
-const helmet = require('helmet')
-const cors = require('cors')
-const bcrypt = require('bcryptjs')
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const session = require('express-session');
 
-const db = require('./database/dbConfig.js')
-const Users = require('./users/users-model.js')
+const db = require('./database/dbConfig.js');
+const Users = require('./users/users-model.js');
 
-const server = express()
+const server = express();
 
-server.use(helmet())
-server.use(express.json())
-server.use(cors())
+const sessionConfig = {
+  name: 'addresschip', // would name the cookie sid by default
+  secret: process.env.SESSION_SECRET || 'keep it secret, keep it safe',
+  cookie: {
+    maxAge: 1000 * 60 * 60, // in milliseconds
+    secure: false, // true means send across https
+    httpOnly: true, // means JS has no acess to the cookie
+  },
+  resave: false,
+  saveUninitialized: true, //GDPR compliance
+};
+
+server.use(helmet());
+server.use(express.json());
+server.use(cors());
+server.use(session(sessionConfig));
 
 server.get('/', (req, res) => {
-  res.send("It's alive!")
-})
+  res.send("It's alive!");
+});
 
 {
   /** ******************************** */
 }
 server.post('/api/register', (req, res) => {
-  let user = req.body
+  let user = req.body;
 
-  const hash = bcrypt.hashSync(user.password, 10)
-  user.password = hash
+  const hash = bcrypt.hashSync(user.password, 10);
+  user.password = hash;
 
   Users.add(user)
     .then(saved => {
-      res.status(201).json(saved)
+      res.status(201).json(saved);
     })
     .catch(error => {
-      res.status(500).json(error)
-    })
-})
+      res.status(500).json(error);
+    });
+});
 
 {
   /** ******************************** */
 }
 server.post('/api/login', (req, res) => {
-  let { username, password } = req.body
+  let { username, password } = req.body;
 
   if (username && password) {
     Users.findBy({ username })
       .first()
       .then(user => {
         if (user && bcrypt.compareSync(password, user.password)) {
-          res.status(200).json({ message: `Welcome ${user.username}!` })
+          res.status(200).json({ message: `Welcome ${user.username}!` });
         } else {
-          res.status(401).json({ message: 'Invalid Credentials' })
+          res.status(401).json({ message: 'Invalid Credentials' });
         }
       })
       .catch(error => {
-        res.status(500).json(error)
-      })
+        res.status(500).json(error);
+      });
   }
-})
+});
 {
   /** ******************************** */
 }
@@ -62,37 +76,37 @@ server.post('/api/login', (req, res) => {
 server.get('/api/users', restricted, (req, res) => {
   Users.find()
     .then(users => {
-      res.json(users)
+      res.json(users);
     })
-    .catch(err => res.send(err))
-})
+    .catch(err => res.send(err));
+});
 
 server.get('/hash', (req, res) => {
-  const name = req.query.name
+  const name = req.query.name;
 
-  const hash = bcrypt.hashSync(name, 10)
-  res.send(`The hash for ${name} is ${hash}`)
-})
+  const hash = bcrypt.hashSync(name, 10);
+  res.send(`The hash for ${name} is ${hash}`);
+});
 
 // middleware:
-function restricted (req, res, next) {
-  const { username, password } = req.headers
+function restricted(req, res, next) {
+  const { username, password } = req.headers;
 
   if (username && password) {
     Users.findBy({ username })
       .first()
       .then(user => {
         if (user && bcrypt.compareSync(password, user.password)) {
-          next()
+          next();
         } else {
-          res.status(401).json({ message: 'invalidate login' })
+          res.status(401).json({ message: 'invalidate login' });
         }
       })
       .catch(error => {
-        res.status(500).json(error)
-      })
+        res.status(500).json(error);
+      });
   }
 }
 
-const port = process.env.PORT || 5000
-server.listen(port, () => console.log(`\n** Running on port ${port} **\n`))
+const port = process.env.PORT || 5000;
+server.listen(port, () => console.log(`\n** Running on port ${port} **\n`));
